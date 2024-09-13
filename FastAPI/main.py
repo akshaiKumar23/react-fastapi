@@ -27,6 +27,7 @@ class TransactionBase(BaseModel):
     description: str
     is_income: bool
     date: str
+# yeh pydantic ka BaseModel class extend karta hein aur apne model ko pytantic ko use karke validate karta hein
 
 
 class TransactionModel(TransactionBase):
@@ -34,6 +35,8 @@ class TransactionModel(TransactionBase):
 
     class Config:
         orm_mode = True
+
+# yeh hamare validated model TransactionnModel ko extend karta hein aur usmein id add karta hein and orm true kar deta hein taki ORM ke saath work kar paye
 
 
 def get_db():
@@ -45,7 +48,9 @@ def get_db():
 
 
 db_dependency = Annotated[Session, Depends(get_db)]
-
+# yeh additional dependencies attach karne mein use aata hein
+# Session object use to interact with the database , to perform query , add etc
+# Depends is a ulility jo ki dependency define karta hein, yeh dependencies database connections jaise functionality ko inject karne mein help aata hein into route functions
 models.Base.metadata.create_all(bind=engine)
 
 
@@ -63,3 +68,46 @@ async def create_transaction(transaction: TransactionBase, db: db_dependency):
 async def read_transactions(db: db_dependency, skip: int = 0, limit: int = 100):
     transactions = db.query(models.Transaction).offset(skip).limit(limit).all()
     return transactions
+
+
+@app.delete("/transactions/{transaction_id}")
+async def delete_transaction(transaction_id: int, db: db_dependency):
+    transaction = db.query(models.Transaction).filter(
+        models.Transaction.id == transaction_id).first()
+    if not transaction:
+        raise HTTPException(status_code=404, detail="Transaction not found")
+    db.delete(transaction)
+    db.commit()
+    return {"detail": "Transaction deleted"}
+
+
+@app.put("/transactions/{transaction_id}")
+async def update_transaction(transaction_id: int, new_transaction: TransactionBase, db: db_dependency):
+    # transaction = db.query(models.Transaction).filter(
+    #     models.Transaction.id == transaction_id).first()
+    # if not transaction:
+    #     raise HTTPException(status_code=404, detail="Transaction not found")
+    # transaction.amount = transaction.amount
+    # transaction.category = transaction.category
+    # transaction.description = transaction.description
+    # transaction.is_income = transaction.is_income
+    # transaction.date = transaction.date
+    # db.commit()
+    # db.refresh(transaction)
+    # return transaction
+    transaction = db.query(models.Transaction).filter(
+        models.Transaction.id == transaction_id).first()
+
+    if not transaction:
+        raise HTTPException(
+            status_code=404, detail="Could not find transaction")
+
+    transaction.amount = new_transaction.amount
+    transaction.category = new_transaction.category
+    transaction.description = new_transaction.description
+    transaction.is_income = new_transaction.is_income
+    transaction.date = new_transaction.date
+    db.add(transaction)
+    db.commit()
+    db.refresh(transaction)
+    return transaction

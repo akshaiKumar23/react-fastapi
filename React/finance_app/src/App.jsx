@@ -46,6 +46,11 @@ function App() {
     });
   };
 
+
+  const handleDeleteTransaction = async (id) => {
+    await api.delete(`/transactions/${id}`);
+    fetchTransactions();
+  };
   return (
     <>
       <Navbar bg="dark" variant="dark" expand="lg">
@@ -125,6 +130,7 @@ function App() {
                 <th>Description</th>
                 <th>Income</th>
                 <th>Date</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -135,6 +141,11 @@ function App() {
                   <td>{transaction.description}</td>
                   <td>{transaction.is_income ? 'Yes' : 'No'}</td>
                   <td>{transaction.date}</td>
+                  <td>
+                    <Button
+                      onClick={() => handleDeleteTransaction(transaction.id)}
+                      variant="danger" size="sm">Delete</Button>
+                  </td>
                 </tr>
               ))}
             </tbody>
