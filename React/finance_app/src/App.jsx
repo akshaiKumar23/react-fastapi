@@ -15,6 +15,7 @@ function App() {
     is_income: false,
     date: ""
   });
+  const [editingTransactionId, setEditingTransactionId] = useState(null);
 
   const fetchTransactions = async () => {
     const response = await api.get('/transactions');
@@ -35,7 +36,12 @@ function App() {
 
   const handleFormSubmit = async (e) => {
     e.preventDefault();
-    await api.post('/transactions', formData);
+    if (editingTransactionId) {
+      await api.put(`/transactions/${editingTransactionId}`, formData);
+      setEditingTransactionId(null);
+    } else {
+      await api.post('/transactions', formData);
+    }
     fetchTransactions();
     setFormData({
       amount: "",
@@ -46,11 +52,22 @@ function App() {
     });
   };
 
+  const handleEditTransaction = (transaction) => {
+    setFormData({
+      amount: transaction.amount,
+      category: transaction.category,
+      description: transaction.description,
+      is_income: transaction.is_income,
+      date: transaction.date
+    });
+    setEditingTransactionId(transaction.id);
+  };
 
   const handleDeleteTransaction = async (id) => {
     await api.delete(`/transactions/${id}`);
     fetchTransactions();
   };
+
   return (
     <>
       <Navbar bg="dark" variant="dark" expand="lg">
@@ -116,7 +133,7 @@ function App() {
           </Form.Group>
 
           <Button variant="primary" type="submit">
-            Submit
+            {editingTransactionId ? "Update" : "Submit"}
           </Button>
         </Form>
 
@@ -143,8 +160,15 @@ function App() {
                   <td>{transaction.date}</td>
                   <td>
                     <Button
+                      onClick={() => handleEditTransaction(transaction)}
+                      variant="warning" size="sm" className="me-2">
+                      Edit
+                    </Button>
+                    <Button
                       onClick={() => handleDeleteTransaction(transaction.id)}
-                      variant="danger" size="sm">Delete</Button>
+                      variant="danger" size="sm">
+                      Delete
+                    </Button>
                   </td>
                 </tr>
               ))}

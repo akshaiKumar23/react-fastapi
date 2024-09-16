@@ -1,10 +1,11 @@
-from fastapi import FastAPI, HTTPException, Depends
 from typing import Annotated, List
+import models
+from database import SessionLocal, engine
 from sqlalchemy.orm import Session
 from pydantic import BaseModel
-from database import SessionLocal, engine
-import models
+from fastapi import FastAPI, HTTPException, Depends
 from fastapi.middleware.cors import CORSMiddleware
+
 
 app = FastAPI()
 
@@ -50,8 +51,10 @@ def get_db():
 db_dependency = Annotated[Session, Depends(get_db)]
 # yeh additional dependencies attach karne mein use aata hein
 # Session object use to interact with the database , to perform query , add etc
-# Depends is a ulility jo ki dependency define karta hein, yeh dependencies database connections jaise functionality ko inject karne mein help aata hein into route functions
+# Depends is a utility jo ki dependency define karta hein, yeh dependencies database connections jaise functionality ko inject karne mein help aata hein into route functions
+# database injection to the correponding endpoints
 models.Base.metadata.create_all(bind=engine)
+# yeh saare tables create kar dega jo ki models mein defined hein in the database
 
 
 @app.post("/transactions/", response_model=TransactionModel)
@@ -83,18 +86,7 @@ async def delete_transaction(transaction_id: int, db: db_dependency):
 
 @app.put("/transactions/{transaction_id}")
 async def update_transaction(transaction_id: int, new_transaction: TransactionBase, db: db_dependency):
-    # transaction = db.query(models.Transaction).filter(
-    #     models.Transaction.id == transaction_id).first()
-    # if not transaction:
-    #     raise HTTPException(status_code=404, detail="Transaction not found")
-    # transaction.amount = transaction.amount
-    # transaction.category = transaction.category
-    # transaction.description = transaction.description
-    # transaction.is_income = transaction.is_income
-    # transaction.date = transaction.date
-    # db.commit()
-    # db.refresh(transaction)
-    # return transaction
+
     transaction = db.query(models.Transaction).filter(
         models.Transaction.id == transaction_id).first()
 
